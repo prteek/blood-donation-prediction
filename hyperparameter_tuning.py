@@ -57,15 +57,15 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--experiment-name', default='blood-donation')
-    parser.add_argument('--trial-name-prefix')
+    parser.add_argument('--trial-name-prefix', default='blood-donation')
 
     args = parser.parse_args()
     
     experiment_name = args.experiment_name
     trial_name_prefix = args.trial_name_prefix
     
-    time = datetime.now().strftime('%Y-%m-%dT%H%M')
-    trial_name = f"{trial_name_prefix}--{time}"
+    timestamp = datetime.now().strftime('%Y-%m-%dT%H%M')
+    trial_name = f"{trial_name_prefix}--{timestamp}"
     
     bucket = 'blood-donation-prediction'
     
@@ -93,9 +93,9 @@ if __name__ == '__main__':
                        )
     
     
-    metric_definitions = [{'Name': 'f1_score', 'Regex': "f1_score=(.*?);"},
-                        {'Name': 'precision', 'Regex': "precision=(.*?);"},
-                        {'Name': 'recall', 'Regex': "recall=(.*?);"}]
+    metric_definitions = [{'Name': 'f1_score', 'Regex': "f1_score=([0-9\\.]+)"},
+                        {'Name': 'precision', 'Regex': "precision=([0-9\\.]+)"},
+                        {'Name': 'recall', 'Regex': "recall=([0-9\\.]+)"}]
     
     
     hyperparams = {'min_recency':IntegerParameter(1,60, scaling_type='Logarithmic'),
@@ -104,8 +104,8 @@ if __name__ == '__main__':
                                 'f1_score', 
                                 hyperparameter_ranges=hyperparams,
                                 metric_definitions=metric_definitions,
-                                max_jobs=2,
-                                max_parallel_jobs=2,
+                                max_jobs=20,
+                                max_parallel_jobs=4,
                                 base_tuning_job_name='tuning'
                                )
     
