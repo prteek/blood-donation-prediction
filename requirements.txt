@@ -1,0 +1,27 @@
+##### Working Environment
+python-dotenv
+
+##### Dev
+black
+flake8
+pytest
+
+##### Core scientific package
+numpy
+pandas
+scipy
+
+##### Machine Learning related packages
+scikit-learn
+auto-sklearn
+human-learn
+scikit-lego
+
+#### Visualisation
+matplotlib
+altair
+
+#### AWS
+boto3
+sagemaker
+sagemaker-experiments
