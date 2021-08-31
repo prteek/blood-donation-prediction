@@ -4,11 +4,11 @@ import argparse
 import os
 import json
 from sklearn.model_selection import cross_val_score
-import subprocess, sys
 
 
 def install(package):
-    subprocess.call([sys.executable, "-m","pip", "install", package])
+    os.system(f"python -m pip install {package}")
+    return None
 
 
 def model_fn(model_dir):
@@ -25,6 +25,7 @@ def simple_rules(df, min_recency=20, min_time=70):
 
 if __name__ == '__main__':
     
+    # Install additional required packages before importing them
     install('ipython')
     install('human-learn')
     from hulearn.classification import FunctionClassifier
@@ -60,12 +61,12 @@ if __name__ == '__main__':
                              min_time=min_time)
     
     f1_score = cross_val_score(clf, X, y, scoring='f1', cv=4, n_jobs=2)
-    print(f"f1_score={np.mean(f1_score)};")
+    print(f"f1_score={np.mean(f1_score)}")
     
     precision = cross_val_score(clf, X, y, scoring='precision', cv=4, n_jobs=2)
-    print(f"precision={np.mean(precision)};")
+    print(f"precision={np.mean(precision)}")
     
     recall = cross_val_score(clf, X, y, scoring='recall', cv=4, n_jobs=2)
-    print(f"recall={np.mean(recall)};")
+    print(f"recall={np.mean(recall)}")
 
     
