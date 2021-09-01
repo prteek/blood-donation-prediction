@@ -43,6 +43,12 @@ if __name__ == '__main__':
     
     training_dir = f"s3://{bucket}/data/train"
     
+    
+    metric_definitions = [{'Name': 'f1_score', 'Regex': "f1_score=([0-9\\.]+)"},
+                        {'Name': 'precision', 'Regex': "precision=([0-9\\.]+)"},
+                        {'Name': 'recall', 'Regex': "recall=([0-9\\.]+)"},
+                        {'Name': 'epoch', 'Regex': "epoch=([0-9\\.]+)"}]
+                        
     estimator = SKLearn(entry_point,
                        role=role,
                        framework_version='0.23-1',
@@ -53,6 +59,7 @@ if __name__ == '__main__':
                        max_wait=1000,
                        max_run=300,
                        base_job_name='training',
+                       metric_definitions=metric_definitions,
                        hyperparameters=hyperparameters
                        )
                        
