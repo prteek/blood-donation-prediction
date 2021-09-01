@@ -87,7 +87,7 @@ if __name__ == '__main__':
     
     output_path = f"s3://{bucket}/model/artifacts"
     training_dir = f"s3://{bucket}/data/train"
-#     hyperparams = {'min_recency':15, 'min_time':60}
+#     hyperparams = {'recency_threshold':15, 'time_threshold':60}
     
     estimator = SKLearn('train.py',
                        role=role,
@@ -107,8 +107,8 @@ if __name__ == '__main__':
                         {'Name': 'recall', 'Regex': "recall=([0-9\\.]+)"}]
     
     
-    hyperparams = {'min_recency':IntegerParameter(1,60, scaling_type='Logarithmic'),
-                  'min_time':IntegerParameter(1,100, scaling_type='Logarithmic')}
+    hyperparams = {'recency_threshold':IntegerParameter(1,60, scaling_type='Logarithmic'),
+                  'time_threshold':IntegerParameter(1,100, scaling_type='Logarithmic')}
     
     tuner = HyperparameterTuner(estimator, 
                                 'f1_score', 
