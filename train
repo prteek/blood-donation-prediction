@@ -17,6 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('--model-file')
     parser.add_argument('--instance-type', default='local')
     parser.add_argument('--job-name-prefix', default='blood-donation')
+    parser.add_argument('--wait', default='True')
     parser.add_argument('--hyperparameters', 
                         type=str, 
                         default='{}', 
@@ -39,6 +40,8 @@ if __name__ == '__main__':
     timestamp = datetime.now().strftime('%Y-%m-%dT%H%M')
     job_name = f"{job_name_prefix}--{timestamp}"
         
+    wait = eval(args.wait)
+    
     hyperparameters = eval(args.hyperparameters)
     
     training_dir = f"s3://{bucket}/data/train"
@@ -59,10 +62,11 @@ if __name__ == '__main__':
                        max_wait=1000,
                        max_run=300,
                        base_job_name='training',
+                       EnableSageMakerMetricsTimeSeries=True,
                        metric_definitions=metric_definitions,
                        hyperparameters=hyperparameters
                        )
                        
                        
-    estimator.fit({'training':training_dir}, job_name=job_name)
+    estimator.fit({'training':training_dir}, job_name=job_name, wait=wait)
     
