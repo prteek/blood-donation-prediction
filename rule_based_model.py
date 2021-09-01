@@ -5,7 +5,8 @@ import os
 import json
 from sklearn.model_selection import RandomizedSearchCV
 import joblib
-from scipy.stats import uniform
+from scipy.stats import uniform, randint
+from sklearn.base import BaseEstimator, TransformerMixin
 
 def install(package):
     os.system(f"python -m pip install {package}")
@@ -23,6 +24,23 @@ def simple_rules(df, recency_threshold=20, time_threshold=70, frequency_threshol
     ruler.add_rule(lambda d: d['Time (months)'] <= time_threshold, 1, name='time')
     ruler.add_rule(lambda d: d['Frequency (times)'] >= frequency_threshold,1, name='frequency')
     return ruler.predict(df)
+
+
+
+def compound_rules(df, recency_threshold=20, 
+                   time_threshold=70, 
+                   time_threshold_delta=10, 
+                   frequency_threshold=15):
+    
+    ruler = CaseWhenRuler(default=0)
+    ruler.add_rule(lambda d: (d['Recency (months)'] <= recency_threshold) & 
+                   (d['Time (months)'] >= time_threshold) & 
+                   (d['Time (months)'] <= time_threshold+time_threshold_delta) &
+                   (d['Frequency (times)'] >= frequency_threshold), 
+                   1, name='recency&time&frequency')
+    
+    return ruler.predict(df)
+
 
 
 if __name__ == '__main__':
@@ -52,9 +70,10 @@ if __name__ == '__main__':
     X = df[predictors]
     y = df[target]
     
-    clf = FunctionClassifier(simple_rules)
+    clf = FunctionClassifier(compound_rules)
     
-    grid = {'time_threshold':uniform(loc=1, scale=100), 'recency_threshold':uniform(loc=1, scale=80), 'frequency_threshold':uniform(loc=1, scale=50)}
+    grid = {'time_threshold':randint(low=1, high=100), 'time_threshold_delta':randint(low=1, high=50),
+            'recency_threshold':randint(low=1, high=80), 'frequency_threshold':randint(low=1, high=50)}
     
     metrics = ['f1', 'precision', 'recall']
     model = RandomizedSearchCV(clf, grid, 
