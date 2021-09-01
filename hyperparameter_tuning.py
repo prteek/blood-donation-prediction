@@ -22,7 +22,7 @@ role = os.environ['SAGEMAKER_EXECUTION_ROLE']
 def search_trial_components_by_name(search_string:str):
     # the training job names contain the tuning job name (and the training job name is in the source arn)
     source_arn_filter = Filter(
-        name="TrialComponentName", operator=Operator.CONTAINS, value=seach_string
+        name="TrialComponentName", operator=Operator.CONTAINS, value=search_string
     )
 
     search_expression = SearchExpression(
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     training_dir = f"s3://{bucket}/data/train"
 #     hyperparams = {'recency_threshold':15, 'time_threshold':60}
     
-    estimator = SKLearn('train.py',
+    estimator = SKLearn('rule_based_model.py',
                        role=role,
                        framework_version='0.23-1',
                        output_path=output_path,
@@ -97,7 +97,7 @@ if __name__ == '__main__':
                        instance_type='ml.m5.large',
                        use_spot_instances=True,
                        max_wait=1000,
-                       max_run=300,
+                       max_run=1000,
                        base_job_name='training'
                        )
     
@@ -107,16 +107,18 @@ if __name__ == '__main__':
                         {'Name': 'recall', 'Regex': "recall=([0-9\\.]+)"}]
     
     
-    hyperparams = {'recency_threshold':IntegerParameter(1,60, scaling_type='Logarithmic'),
-                  'time_threshold':IntegerParameter(1,100, scaling_type='Logarithmic')}
+    hyperparams = {'recency_threshold':IntegerParameter(1,80, scaling_type='Logarithmic'),
+                  'time_threshold':IntegerParameter(1,100, scaling_type='Logarithmic'), 
+                  'frequency_threshold':IntegerParameter(1,80, scaling_type='Logarithmic')}
     
     tuner = HyperparameterTuner(estimator, 
                                 'f1_score', 
                                 hyperparameter_ranges=hyperparams,
                                 metric_definitions=metric_definitions,
-                                max_jobs=20,
+                                max_jobs=100,
                                 max_parallel_jobs=4,
-                                base_tuning_job_name='tuning'
+                                base_tuning_job_name='tuning',
+                                early_stopping_type='Auto'
                                )
     
     tuner.fit(inputs={'training':training_dir}, 
