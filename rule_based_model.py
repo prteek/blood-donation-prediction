@@ -3,8 +3,9 @@ import pandas as pd
 import argparse
 import os
 import json
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import RandomizedSearchCV
 import joblib
+from scipy.stats import uniform
 
 def install(package):
     os.system(f"python -m pip install {package}")
@@ -16,10 +17,11 @@ def model_fn(model_dir):
     return model
 
 
-def simple_rules(df, recency_threshold=20, time_threshold=70):
+def simple_rules(df, recency_threshold=20, time_threshold=70, frequency_threshold=15):
     ruler = CaseWhenRuler(default=0)
     ruler.add_rule(lambda d: d['Recency (months)'] <= recency_threshold, 1, name='recency')
     ruler.add_rule(lambda d: d['Time (months)'] <= time_threshold, 1, name='time')
+    ruler.add_rule(lambda d: d['Frequency (times)'] >= frequency_threshold,1, name='frequency')
     return ruler.predict(df)
 
 
@@ -34,18 +36,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--training', default='/opt/ml/input/data/training')
     parser.add_argument('--model-dir', default='/opt/ml/model')
-    parser.add_argument('--recency_threshold', type=int, default=5)
-    parser.add_argument('--time_threshold', type=int, default=15)
     
     args = parser.parse_args()
     
     training_dir = args.training
     model_dir = args.model_dir
 
-    # Hyperparameters
-    recency_threshold = args.recency_threshold
-    time_threshold = args.time_threshold
-    
     
     df = pd.read_parquet(os.path.join(training_dir, 'train.parquet'))
 
@@ -56,17 +52,30 @@ if __name__ == '__main__':
     X = df[predictors]
     y = df[target]
     
-    clf = FunctionClassifier(simple_rules, 
-                             recency_threshold=recency_threshold, 
-                             time_threshold=time_threshold)
-        
-    f1_score = cross_val_score(clf, X, y, scoring='f1', cv=4, n_jobs=2)
-    print(f"f1_score={np.mean(f1_score)}")
+    clf = FunctionClassifier(simple_rules)
     
-    precision = cross_val_score(clf, X, y, scoring='precision', cv=4, n_jobs=2)
-    print(f"precision={np.mean(precision)}")
+    grid = {'time_threshold':uniform(loc=1, scale=100), 'recency_threshold':uniform(loc=1, scale=80), 'frequency_threshold':uniform(loc=1, scale=50)}
     
-    recall = cross_val_score(clf, X, y, scoring='recall', cv=4, n_jobs=2)
-    print(f"recall={np.mean(recall)}")
+    metrics = ['f1', 'precision', 'recall']
+    model = RandomizedSearchCV(clf, grid, 
+                               scoring=metrics, 
+                               refit='f1', 
+                               cv=5, 
+                               n_jobs=-1, 
+                               verbose=3, 
+                               n_iter=2000)
+    
+    model.fit(X,y)
+    
+    results = pd.DataFrame(model.cv_results_)
+    
+    for i, row in results.iterrows():
+        print(f"f1_score={row['mean_test_f1']}")
+        print(f"precision={row['mean_test_precision']}")
+        print(f"recall={row['mean_test_recall']}")
+        print(f"epoch={i}")
 
+
+    
+    joblib.dump(model, os.path.join(model_dir, 'model.mdl'))
     
