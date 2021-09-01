@@ -49,8 +49,7 @@ if __name__ == '__main__':
     
     metric_definitions = [{'Name': 'f1_score', 'Regex': "f1_score=([0-9\\.]+)"},
                         {'Name': 'precision', 'Regex': "precision=([0-9\\.]+)"},
-                        {'Name': 'recall', 'Regex': "recall=([0-9\\.]+)"},
-                        {'Name': 'epoch', 'Regex': "epoch=([0-9\\.]+)"}]
+                        {'Name': 'recall', 'Regex': "recall=([0-9\\.]+)"}]
                         
     estimator = SKLearn(entry_point,
                        role=role,
