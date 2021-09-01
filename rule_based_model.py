@@ -5,6 +5,7 @@ import os
 import json
 from sklearn.model_selection import RandomizedSearchCV
 import joblib
+import time
 from scipy.stats import uniform
 
 def install(package):
@@ -74,6 +75,7 @@ if __name__ == '__main__':
         print(f"precision={row['mean_test_precision']}")
         print(f"recall={row['mean_test_recall']}")
         print(f"epoch={i}")
+        time.sleep(0.01)
 
 
     
