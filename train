@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+
+import os
+from sagemaker.sklearn import SKLearn
+import argparse
+from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv('local_credentials.env')
+
+role = os.environ['SAGEMAKER_EXECUTION_ROLE']
+
+if __name__ == '__main__':
+
+    bucket = 'blood-donation-prediction'
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model-file')
+    parser.add_argument('--instance-type', default='local')
+    parser.add_argument('--job-name-prefix', default='blood-donation')
+    parser.add_argument('--hyperparameters', 
+                        type=str, 
+                        default='{}', 
+                        help="""hyperparameters formatted as string e.g. "{'time_threshold':10, 'string_value':'string'}" """)
+    
+    args = parser.parse_args()
+    
+    entry_point = args.model_file
+    if not '.py' in entry_point: entry_point = f"{entry_point}.py"
+    
+    instance_type = args.instance_type
+    if instance_type == 'local': 
+        use_spot_instances = False
+        output_path = 'file://'
+    else: 
+        use_spot_instances = True
+        output_path = f"s3://{bucket}/model/artifacts"
+    
+    job_name_prefix = args.job_name_prefix
+    timestamp = datetime.now().strftime('%Y-%m-%dT%H%M')
+    job_name = f"{job_name_prefix}--{timestamp}"
+        
+    hyperparameters = eval(args.hyperparameters)
+    
+    training_dir = f"s3://{bucket}/data/train"
+    
+    estimator = SKLearn(entry_point,
+                       role=role,
+                       framework_version='0.23-1',
+                       output_path=output_path,
+                       instance_count=1,
+                       instance_type=instance_type,
+                       use_spot_instances=use_spot_instances,
+                       max_wait=1000,
+                       max_run=300,
+                       base_job_name='training',
+                       hyperparameters=hyperparameters
+                       )
+                       
+                       
+    estimator.fit({'training':training_dir}, job_name=job_name)
+    
