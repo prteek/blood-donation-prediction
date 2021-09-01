@@ -5,7 +5,6 @@ import os
 import json
 from sklearn.model_selection import RandomizedSearchCV
 import joblib
-import time
 from scipy.stats import uniform
 
 def install(package):
@@ -70,14 +69,10 @@ if __name__ == '__main__':
     
     results = pd.DataFrame(model.cv_results_)
     
-    for i, row in results.iterrows():
-        print(f"f1_score={row['mean_test_f1']}")
-        print(f"precision={row['mean_test_precision']}")
-        print(f"recall={row['mean_test_recall']}")
-        print(f"epoch={i}")
-        time.sleep(0.01)
-
-
+    best_row = results.iloc[model.best_index_,:]
+    print(f"f1_score={best_row['mean_test_f1']}")
+    print(f"precision={best_row['mean_test_precision']}")
+    print(f"recall={best_row['mean_test_recall']}")
     
     joblib.dump(model, os.path.join(model_dir, 'model.mdl'))
     
