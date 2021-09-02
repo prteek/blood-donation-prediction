@@ -9,38 +9,42 @@ from scipy.stats import uniform, randint
 from sklearn.base import BaseEstimator, TransformerMixin
 
 def install(package):
+    """Install packages missing from training container image 
+    (make sure dependencies do not change or reinstall scipy, numpy or scikit-learn)"""
     os.system(f"python -m pip install {package}")
     return None
 
 
 def model_fn(model_dir):
+    """Required for sagemaker training if needed to deploy the trained model"""
     model = joblib.load(os.path.join(model_dir, 'model.mdl'))
     return model
 
 
-def simple_rules(df, recency_threshold=20, time_threshold=70, frequency_threshold=15):
-    ruler = CaseWhenRuler(default=0)
-    ruler.add_rule(lambda d: d['Recency (months)'] <= recency_threshold, 1, name='recency')
-    ruler.add_rule(lambda d: d['Time (months)'] <= time_threshold, 1, name='time')
-    ruler.add_rule(lambda d: d['Frequency (times)'] >= frequency_threshold,1, name='frequency')
-    return ruler.predict(df)
-
-
-
-def compound_rules(df, recency_threshold=20, 
-                   time_threshold=70, 
-                   time_threshold_delta=10, 
-                   frequency_threshold=15):
+def rule_based_models(df, recency_threshold=20, 
+                      time_threshold=70, 
+                      time_threshold_delta=10, 
+                      frequency_threshold=15, 
+                      use_simple_model=True):
+    """Rule based models defined by observing data.
+    These can form a good baseline"""
     
     ruler = CaseWhenRuler(default=0)
-    ruler.add_rule(lambda d: (d['Recency (months)'] <= recency_threshold) & 
-                   (d['Time (months)'] >= time_threshold) & 
-                   (d['Time (months)'] <= time_threshold+time_threshold_delta) &
-                   (d['Frequency (times)'] >= frequency_threshold), 
-                   1, name='recency&time&frequency')
     
+    if use_simple_model: # Rules are combined by OR condition
+        ruler.add_rule(lambda d: d['Recency (months)'] <= recency_threshold, 1, name='recency')
+        ruler.add_rule(lambda d: (d['Time (months)'] >= time_threshold) & 
+                       (d['Time (months)'] <= time_threshold+time_threshold_delta), 1, name='time')
+        ruler.add_rule(lambda d: d['Frequency (times)'] >= frequency_threshold,1, name='frequency')
+    
+    else: # Rules are combined by AND condition
+        ruler.add_rule(lambda d: (d['Recency (months)'] <= recency_threshold) & 
+                       (d['Time (months)'] >= time_threshold) & 
+                       (d['Time (months)'] <= time_threshold+time_threshold_delta) &
+                       (d['Frequency (times)'] >= frequency_threshold), 
+                       1, name='recency&time&frequency')
+        
     return ruler.predict(df)
-
 
 
 if __name__ == '__main__':
@@ -70,25 +74,31 @@ if __name__ == '__main__':
     X = df[predictors]
     y = df[target]
     
-    clf = FunctionClassifier(compound_rules)
+    clf = FunctionClassifier(rule_based_models)
     
-    grid = {'time_threshold':randint(low=1, high=100), 'time_threshold_delta':randint(low=1, high=50),
-            'recency_threshold':randint(low=1, high=80), 'frequency_threshold':randint(low=1, high=50)}
+    grid = {'time_threshold':randint(low=1, high=100), 
+            'time_threshold_delta':randint(low=1, high=50),
+            'recency_threshold':randint(low=1, high=80), 
+            'frequency_threshold':randint(low=1, high=50),
+            'use_simple_model':[True, False]}
     
     metrics = ['f1', 'precision', 'recall']
+    
     model = RandomizedSearchCV(clf, grid, 
                                scoring=metrics, 
                                refit='f1', 
                                cv=5, 
                                n_jobs=-1, 
                                verbose=3, 
-                               n_iter=2000)
+                               n_iter=4000)
     
     model.fit(X,y)
     
     results = pd.DataFrame(model.cv_results_)
     
     best_row = results.iloc[model.best_index_,:]
+    
+    print(f"Final results: {best_row}")
     print(f"f1_score={best_row['mean_test_f1']}")
     print(f"precision={best_row['mean_test_precision']}")
     print(f"recall={best_row['mean_test_recall']}")
