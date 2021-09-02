@@ -22,6 +22,25 @@ SAGEMAKER_EXECUTION_ROLE=arn:aws:iam::432123456789:role/service-role/AmazonSageM
     
     (Optionally for above you can setup AWS credentials in cli)
 
+### Prepare training and test data
+There is a helper ```data_prep.py``` which can help create train and test set data from ```transfusion.data``` on either s3 or locally
+
+#### Usage
+For s3
+``` shell
+python data_prep.py --bucket s3://bucket-name --test-size 0.2
+```
+
+Raw data is placed in the directory ```data``` in the bucket and train and test data in corresponding folders within ```data```
+
+
+For local
+
+```shell
+python data_prep.py --bucket "." --test-size 0.2
+```
+
+
 
 ### Train a model
 There are many model specific files that can generate ML model by training either locally or in Sagemaker. The helper ```train``` can be used to start training using any model file
