@@ -22,6 +22,12 @@ SAGEMAKER_EXECUTION_ROLE=arn:aws:iam::432123456789:role/service-role/AmazonSageM
     
     (Optionally for above you can setup AWS credentials in cli)
 
+Although the process can be accomplished locally it would be best to use AWS for data storage and training.
+Setup on AWS requires:
+1. An appropriate Role which can read/write to s3 and launch training/hpo jobs on sagemaker
+2. An s3 bucket exclusively for the project
+
+
 ### Prepare training and test data
 There is a helper ```data_prep.py``` which can help create train and test set data from ```transfusion.data``` on either s3 or locally
 
