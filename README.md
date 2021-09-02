@@ -13,9 +13,9 @@ python3 -m pip install -r requirements.txt
 Create a ```local_credentials.env``` file (do not share it or add to git or push to ECR) which should look something like below but with your own credentials:
 
 ---
-AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
-AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYzEXAMPLEKEY
-AWS_DEFAULT_REGION=eu-west-1
+AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE  
+AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYzEXAMPLEKEY  
+AWS_DEFAULT_REGION=eu-west-1  
 SAGEMAKER_EXECUTION_ROLE=arn:aws:iam::432123456789:role/service-role/AmazonSageMaker-ExecutionRole-20210330T123456)
 
 ---
