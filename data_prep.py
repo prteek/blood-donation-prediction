@@ -10,16 +10,16 @@ load_dotenv('local_credentials.env')
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bucket', default='blood-donation-prediction')
+    parser.add_argument('--bucket', default='.', help='s3 bucket name or local folder name where train and test dataframes will be saved e.g. "s3://blood-donation-prediction" or "./data"')
     
     args = parser.parse_args()
     
-    bucket = args.bucket
+    bucket_ = args.bucket
+    if bucket_.startswith('s3://'): bucket = bucket_.split('s3://')[1]
+    else: bucket = bucket_
     
-    sess = Session()
-    data_dir = sess.upload_data('transfusion.data', bucket=bucket, key_prefix='data')
-
-    df = pd.read_csv(data_dir)
+    
+    df = pd.read_csv("./transfusion.data")
 
     predictors = ['Recency (months)', 'Time (months)', 'Frequency (times)', 'Monetary (c.c. blood)']
 
@@ -37,17 +37,28 @@ if __name__ == '__main__':
     df_test = pd.concat([X_test, y_test], axis=1)
     
     train_file = 'train.parquet'
-    df_train.to_parquet(train_file)
-    train_dir = sess.upload_data(train_file,
-                                bucket=bucket, key_prefix='data/train')
-    
-    print(f'training-data saved at:{train_dir}')
-    
     test_file = 'test.parquet'
-    df_test.to_parquet(test_file)
-    test_dir = sess.upload_data(test_file,
-                                bucket=bucket, key_prefix='data/test')
-    print(f'test-data saved at:{test_dir}')
-
-    os.system(f"rm {train_file} {test_file}")
     
+    if bucket_.startswith("s3://"):
+        df_train.to_parquet(train_file)
+        df_test.to_parquet(test_file)
+
+        sess = Session()
+        data_dir = sess.upload_data('transfusion.data', bucket=bucket, key_prefix='data')
+
+        train_dir = sess.upload_data(train_file,
+                                    bucket=bucket, key_prefix='data/train')
+
+        print(f'training-data saved at:{train_dir}')
+
+        test_dir = sess.upload_data(test_file,
+                                    bucket=bucket, key_prefix='data/test')
+        print(f'test-data saved at:{test_dir}')
+
+        os.system(f"rm {train_file} {test_file}")
+    
+    else:
+        df_train.to_parquet(os.path.join(bucket, train_file))
+        df_test.to_parquet(os.path.join(bucket, test_file))
+        
+        
