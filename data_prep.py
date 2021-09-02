@@ -11,12 +11,15 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--bucket', default='.', help='s3 bucket name or local folder name where train and test dataframes will be saved e.g. "s3://blood-donation-prediction" or "./data"')
+    parser.add_argument('--test-size', type=float, default=0.2)
     
     args = parser.parse_args()
     
     bucket_ = args.bucket
     if bucket_.startswith('s3://'): bucket = bucket_.split('s3://')[1]
     else: bucket = bucket_
+        
+    test_size = args.test_size
     
     
     df = pd.read_csv("./transfusion.data")
@@ -29,7 +32,7 @@ if __name__ == '__main__':
     y = df[[target]] # to make sure y is a dataframe
     
     X_train, X_test, y_train, y_test = train_test_split(X,y, 
-                                                        test_size = 0.2, 
+                                                        test_size = test_size, 
                                                         stratify=y, 
                                                         random_state=42)
 
